@@ -50,17 +50,14 @@ public class ProductServiceImpl implements ProductService {
 
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Category not found"));
-
+                "Category not found"));
         Product product = new Product();
-
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
         product.setStock(request.getStock());
         product.setActive(true);
         product.setCategory(category);
-
         return mapToResponse(
                 productRepository.save(product));
     }
@@ -70,43 +67,33 @@ public class ProductServiceImpl implements ProductService {
 
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Product not found"));
-
+                "Product not found"));
         return mapToResponse(product);
     }
 
     @Override
-    public ProductResponse update(
-            Long id,
-            UpdateProductRequest request) {
+    public ProductResponse update(Long id, UpdateProductRequest request) {
 
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Product not found"));
-
+                "Product not found"));
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Category not found"));
-
+                "Category not found"));
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
         product.setStock(request.getStock());
         product.setCategory(category);
-
-        return mapToResponse(
-                productRepository.save(product));
+        return mapToResponse(productRepository.save(product));
     }
 
     @Override
     public void delete(Long id) {
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Product not found"));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
         product.setActive(false);
-
         productRepository.save(product);
     }
 
@@ -124,22 +111,17 @@ public class ProductServiceImpl implements ProductService {
         Pageable pageable = PageRequest.of(
                 page,
                 size,
-                Sort.by(sort).ascending());
+                buildSort(sort)
+        );
 
         Specification<Product> spec = Specification.where(
                 ProductSpecification.hasCategory(categoryId))
-                .and(
-                        ProductSpecification.hasMinPrice(minPrice))
-                .and(
-                        ProductSpecification.hasMaxPrice(maxPrice))
-                .and(
-                        ProductSpecification.hasMinimumStock(stockMin))
-                .and(
-                        ProductSpecification.isActive(active));
+                .and(ProductSpecification.hasMinPrice(minPrice))
+                .and(ProductSpecification.hasMaxPrice(maxPrice))
+                .and(ProductSpecification.hasMinimumStock(stockMin))
+                .and(ProductSpecification.isActive(active));
 
-        return productRepository
-                .findAll(spec, pageable)
-                .map(this::mapToResponse);
+        return productRepository.findAll(spec, pageable).map(this::mapToResponse);
     }
 
     @Override
@@ -151,12 +133,26 @@ public class ProductServiceImpl implements ProductService {
         Pageable pageable = PageRequest.of(page, size);
 
         Specification<Product> spec = (root, query, cb) -> cb.lessThanOrEqualTo(
-                root.get("stock"),
-                threshold);
+                root.get("stock"), threshold);
 
-        return productRepository
-                .findAll(spec, pageable)
-                .map(this::mapToResponse);
+        return productRepository.findAll(spec, pageable).map(this::mapToResponse);
     }
 
+    private Sort buildSort(String sort) {
+
+        if (sort == null || sort.isBlank()) {
+            return Sort.by("name").ascending();
+        }
+        if (!sort.contains(",")) {
+            return Sort.by(sort).ascending();
+        }
+
+        String[] parts = sort.split(",");
+        String property = parts[0].trim();
+        String direction = parts[1].trim();
+
+        return direction.equalsIgnoreCase("desc")
+                ? Sort.by(property).descending()
+                : Sort.by(property).ascending();
+    }
 }
