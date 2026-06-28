@@ -1,6 +1,7 @@
 package cl.sebastianrojo.producthub.service.impl;
 
 import java.math.BigDecimal;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,6 +28,12 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
+        "id",
+        "name",
+        "price",
+        "stock"
+    );
 
     public ProductServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository) {
         this.productRepository = productRepository;
@@ -143,13 +150,19 @@ public class ProductServiceImpl implements ProductService {
         if (sort == null || sort.isBlank()) {
             return Sort.by("name").ascending();
         }
-        if (!sort.contains(",")) {
-            return Sort.by(sort).ascending();
+
+        String property = sort;
+        String direction = "asc";
+
+        if (sort.contains(",")) {
+            String[] parts = sort.split(",");
+            property = parts[0].trim();
+            direction = parts[1].trim();
         }
 
-        String[] parts = sort.split(",");
-        String property = parts[0].trim();
-        String direction = parts[1].trim();
+        if (!ALLOWED_SORT_FIELDS.contains(property)) {
+            throw new IllegalArgumentException("Invalid sort field: " + property);
+        }
 
         return direction.equalsIgnoreCase("desc")
                 ? Sort.by(property).descending()
