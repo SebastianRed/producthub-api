@@ -15,6 +15,7 @@ import cl.sebastianrojo.producthub.dto.request.UpdateProductRequest;
 import cl.sebastianrojo.producthub.dto.response.ProductResponse;
 import cl.sebastianrojo.producthub.entity.Category;
 import cl.sebastianrojo.producthub.entity.Product;
+import cl.sebastianrojo.producthub.exception.InvalidSortFieldException;
 import cl.sebastianrojo.producthub.exception.ResourceNotFoundException;
 import cl.sebastianrojo.producthub.repository.CategoryRepository;
 import cl.sebastianrojo.producthub.repository.ProductRepository;
@@ -161,7 +162,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         if (!ALLOWED_SORT_FIELDS.contains(property)) {
-            throw new IllegalArgumentException("Invalid sort field: " + property);
+            throw new InvalidSortFieldException(property);
         }
 
         return direction.equalsIgnoreCase("desc")
