@@ -73,10 +73,9 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductResponse findById(Long id) {
 
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                "Product not found"));
-        return mapToResponse(product);
+        return mapToResponse(
+                findActiveProductById(id)
+        );
     }
 
     @Override
@@ -115,6 +114,10 @@ public class ProductServiceImpl implements ProductService {
             int page,
             int size,
             String sort) {
+
+        if (active == null) {
+            active = true;
+        }
 
         Pageable pageable = PageRequest.of(
                 page,
@@ -168,5 +171,16 @@ public class ProductServiceImpl implements ProductService {
         return direction.equalsIgnoreCase("desc")
                 ? Sort.by(property).descending()
                 : Sort.by(property).ascending();
+    }
+
+    private Product findActiveProductById(Long id) {
+
+        Product product = productRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Product not found"));
+        if (!product.getActive()) {
+            throw new ResourceNotFoundException("Product not found");
+        }
+        return product;
     }
 }
