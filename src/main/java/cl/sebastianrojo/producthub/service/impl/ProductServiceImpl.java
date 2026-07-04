@@ -30,11 +30,10 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
-        "id",
-        "name",
-        "price",
-        "stock"
-    );
+            "id",
+            "name",
+            "price",
+            "stock");
 
     public ProductServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository) {
         this.productRepository = productRepository;
@@ -58,7 +57,7 @@ public class ProductServiceImpl implements ProductService {
 
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                "Category not found"));
+                        "Category not found"));
         Product product = new Product();
         product.setName(request.getName());
         product.setDescription(request.getDescription());
@@ -72,21 +71,16 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductResponse findById(Long id) {
-
         return mapToResponse(
-                findActiveProductById(id)
-        );
+                findActiveProductById(id));
     }
 
     @Override
     public ProductResponse update(Long id, UpdateProductRequest request) {
-
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                "Product not found"));
+        Product product = findActiveProductById(id);
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                "Category not found"));
+                        "Category not found"));
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
@@ -97,9 +91,11 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void delete(Long id) {
-
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        if (!product.getActive()) {
+            return;
+        }
         product.setActive(false);
         productRepository.save(product);
     }
@@ -122,8 +118,7 @@ public class ProductServiceImpl implements ProductService {
         Pageable pageable = PageRequest.of(
                 page,
                 size,
-                buildSort(sort)
-        );
+                buildSort(sort));
 
         Specification<Product> spec = Specification.where(
                 ProductSpecification.hasCategory(categoryId))
@@ -143,8 +138,11 @@ public class ProductServiceImpl implements ProductService {
 
         Pageable pageable = PageRequest.of(page, size);
 
-        Specification<Product> spec = (root, query, cb) -> cb.lessThanOrEqualTo(
-                root.get("stock"), threshold);
+        Specification<Product> spec = (root, query, cb) -> cb.and(
+                cb.lessThanOrEqualTo(
+                        root.get("stock"),
+                        threshold),
+                cb.isTrue(root.get("active")));
 
         return productRepository.findAll(spec, pageable).map(this::mapToResponse);
     }
@@ -176,8 +174,7 @@ public class ProductServiceImpl implements ProductService {
     private Product findActiveProductById(Long id) {
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
         if (!product.getActive()) {
             throw new ResourceNotFoundException("Product not found");
         }
