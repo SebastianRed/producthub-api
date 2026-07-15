@@ -2,26 +2,49 @@ package cl.sebastianrojo.producthub.dto.request;
 
 import java.math.BigDecimal;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+@Schema(description = "Request body used to update an existing product.")
 public class UpdateProductRequest {
 
+    @Schema(
+            description = "Product name",
+            example = "Mechanical Keyboard"
+    )
     @NotBlank
     private String name;
 
+    @Schema(
+            description = "Product description",
+            example = "RGB mechanical keyboard with blue switches"
+    )
     private String description;
 
+    @Schema(
+            description = "Product price",
+            example = "59990"
+    )
     @NotNull
     @DecimalMin("0.01")
     private BigDecimal price;
 
+    @Schema(
+            description = "Available stock",
+            example = "25",
+            minimum = "0"
+    )
     @NotNull
     @Min(0)
     private Integer stock;
 
+    @Schema(
+            description = "Identifier of the associated category",
+            example = "2"
+    )
     @NotNull
     private Long categoryId;
 
